@@ -1,6 +1,7 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 
 import Header from "./components/Header";
+import Footer from "./components/Footer";
 
 import FavoritesPage from "./pages/FavoritesPage";
 import HomePage from "./pages/HomePage";
@@ -36,6 +37,8 @@ export default function App() {
                         element={<NotFoundPage />}
                     />
                 </Routes>
+
+                <Footer />
             </FavoritesProvider>
         </BrowserRouter>
     );
