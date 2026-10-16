@@ -12,10 +12,10 @@ export default function Header() {
                     to="/"
                     className="logo"
                 >
-                    🎬 Movie Finder
+                    <span aria-hidden="true">🎬</span> Movie Finder
                 </Link>
 
-                <nav className="main-navigation">
+                <nav className="main-navigation" aria-label="Main">
                     <NavLink
                         to="/"
                         className={({ isActive }) =>

@@ -14,6 +14,9 @@ export default function App() {
     return (
         <BrowserRouter>
             <FavoritesProvider>
+                <a href="#main-content" className="skip-link">
+                    Skip to content
+                </a>
                 <Header />
 
                 <Routes>
