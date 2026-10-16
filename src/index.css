@@ -786,3 +786,41 @@ input:focus-visible {
     border-color: #c084fc;
     box-shadow: 0 0 0 3px rgba(192, 132, 252, 0.35);
 }
+
+/* Skeleton loaders (match .movie-card layout) */
+.skeleton {
+    background: linear-gradient(90deg, #1f1f24 25%, #2b2b33 50%, #1f1f24 75%);
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+.skeleton-poster {
+    aspect-ratio: 2 / 3;
+    width: 100%;
+}
+
+.skeleton-line {
+    height: 14px;
+    margin-top: 10px;
+    border-radius: 6px;
+}
+
+.skeleton-line-short {
+    width: 55%;
+}
+
+@keyframes skeleton-shimmer {
+    from { background-position: 200% 0; }
+    to { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    .skeleton,
+    .loading-spinner {
+        animation: none;
+    }
+}
