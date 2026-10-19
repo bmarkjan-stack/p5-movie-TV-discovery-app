@@ -1,8 +1,11 @@
 import type {
+    DiscoverParams,
     Genre,
     GenreResponse,
-    Movie,
-    MovieResponse,
+    MediaItem,
+    MediaType,
+    PaginatedResult,
+    RawListResponse,
 } from "../types/movie";
 
 import { getCached, setCached } from "./cache";
@@ -84,41 +87,126 @@ async function request<T>(endpoint: string, useCache = true): Promise<T> {
     return data;
 }
 
-export async function getPopularMovies(): Promise<Movie[]> {
-    const data = await request<MovieResponse>("/movie/popular");
-    return data.results;
+// --- helpers ---------------------------------------------------------------
+
+function tagMediaType<T extends { id: number }>(
+    items: T[],
+    mediaType: MediaType
+): MediaItem[] {
+    return items.map(
+        (item) => ({ ...item, media_type: mediaType }) as unknown as MediaItem
+    );
 }
 
-export async function searchMovies(
-    query: string
-): Promise<Movie[]> {
-    const data = await request<MovieResponse>(
-        `/search/movie?query=${encodeURIComponent(query)}&include_adult=false`
+function toPaginatedResult<T extends { id: number }>(
+    raw: RawListResponse<T>,
+    mediaType: MediaType
+): PaginatedResult<MediaItem> {
+    return {
+        results: tagMediaType(raw.results, mediaType),
+        page: raw.page,
+        // TMDB rejects requests for pages above 500 even when total_pages
+        // reports more, so cap it to avoid a guaranteed error at the end.
+        totalPages: Math.min(raw.total_pages, 500),
+        totalResults: raw.total_results,
+    };
+}
+
+function detailsEndpoint(mediaType: MediaType, id: string | number): string {
+    return `/${mediaType}/${id}`;
+}
+
+// --- public API --------------------------------------------------------------
+
+export async function getPopular(
+    mediaType: MediaType,
+    page = 1
+): Promise<PaginatedResult<MediaItem>> {
+    const raw = await request<RawListResponse<MediaItem>>(
+        `/${mediaType}/popular?page=${page}`
     );
 
-    return data.results;
+    return toPaginatedResult(raw, mediaType);
 }
 
-export async function getMovieDetails(
-    movieId: string
-): Promise<Movie> {
-    return request<Movie>(`/movie/${movieId}`);
-}
-
-export async function getGenres(): Promise<Genre[]> {
-    const data = await request<GenreResponse>(
-        "/genre/movie/list"
+export async function searchMedia(
+    mediaType: MediaType,
+    query: string,
+    page = 1
+): Promise<PaginatedResult<MediaItem>> {
+    const raw = await request<RawListResponse<MediaItem>>(
+        `/search/${mediaType}?query=${encodeURIComponent(
+            query
+        )}&include_adult=false&page=${page}`
     );
 
+    return toPaginatedResult(raw, mediaType);
+}
+
+export async function getDetails(
+    mediaType: MediaType,
+    id: string
+): Promise<MediaItem> {
+    const raw = await request<Omit<MediaItem, "media_type">>(
+        detailsEndpoint(mediaType, id)
+    );
+
+    return { ...raw, media_type: mediaType } as MediaItem;
+}
+
+export async function getGenres(mediaType: MediaType): Promise<Genre[]> {
+    const data = await request<GenreResponse>(`/genre/${mediaType}/list`);
     return data.genres;
 }
 
-export async function getMoviesByGenre(
-    genreId: number
-): Promise<Movie[]> {
-    const data = await request<MovieResponse>(
-        `/discover/movie?with_genres=${genreId}&sort_by=popularity.desc`
+/**
+ * Unified discover call used for browsing (genre filter, sort order, year
+ * range, minimum rating). This replaces the old getPopularMovies /
+ * getMoviesByGenre pair with a single, fully-parameterized endpoint.
+ */
+export async function discoverMedia(
+    mediaType: MediaType,
+    params: DiscoverParams = {}
+): Promise<PaginatedResult<MediaItem>> {
+    const {
+        genreId,
+        sortBy = "popularity.desc",
+        minRating,
+        yearFrom,
+        yearTo,
+        page = 1,
+    } = params;
+
+    const dateField =
+        mediaType === "movie" ? "primary_release_date" : "first_air_date";
+
+    const searchParams = new URLSearchParams({
+        sort_by: sortBy,
+        page: String(page),
+        // Rating sort needs a bigger vote floor, otherwise obscure titles
+        // with a handful of 10/10 votes dominate the list.
+        "vote_count.gte": sortBy.startsWith("vote_average") ? "200" : "10",
+    });
+
+    if (genreId) {
+        searchParams.set("with_genres", String(genreId));
+    }
+
+    if (minRating) {
+        searchParams.set("vote_average.gte", String(minRating));
+    }
+
+    if (yearFrom) {
+        searchParams.set(`${dateField}.gte`, `${yearFrom}-01-01`);
+    }
+
+    if (yearTo) {
+        searchParams.set(`${dateField}.lte`, `${yearTo}-12-31`);
+    }
+
+    const raw = await request<RawListResponse<MediaItem>>(
+        `/discover/${mediaType}?${searchParams.toString()}`
     );
 
-    return data.results;
+    return toPaginatedResult(raw, mediaType);
 }
