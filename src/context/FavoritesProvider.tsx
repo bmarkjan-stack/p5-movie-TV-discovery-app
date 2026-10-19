@@ -1,79 +1,74 @@
-import {
-    useEffect,
-    useState,
-    type ReactNode,
-} from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
-import type { Movie } from "../types/movie";
+import type { MediaItem, MediaType } from "../types/movie";
 import { FavoritesContext } from "./FavoritesContext";
 
-const STORAGE_KEY = "movie-finder-favorites";
+export const FAVORITES_STORAGE_KEY = "movie-finder-favorites";
 
 interface FavoritesProviderProps {
     children: ReactNode;
 }
 
-export function FavoritesProvider({
-    children,
-}: FavoritesProviderProps) {
-    const [favorites, setFavorites] = useState<Movie[]>(() => {
+function loadFavorites(): MediaItem[] {
     try {
-        const savedFavorites =
-            localStorage.getItem(STORAGE_KEY);
+        const saved = localStorage.getItem(FAVORITES_STORAGE_KEY);
 
-        return savedFavorites
-            ? (JSON.parse(savedFavorites) as Movie[])
-            : [];
+        if (!saved) {
+            return [];
+        }
+
+        const parsed = JSON.parse(saved) as Partial<MediaItem>[];
+
+        // Favorites saved before TV support existed have no media_type.
+        // They were all movies, so migrate them instead of dropping them.
+        return parsed.map(
+            (item) =>
+                ({ ...item, media_type: item.media_type ?? "movie" }) as MediaItem
+        );
     } catch {
         return [];
     }
-    });
+}
+
+export function FavoritesProvider({ children }: FavoritesProviderProps) {
+    const [favorites, setFavorites] = useState<MediaItem[]>(loadFavorites);
 
     useEffect(() => {
-        localStorage.setItem(
-            STORAGE_KEY,
-            JSON.stringify(favorites)
-        );
+        localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(favorites));
     }, [favorites]);
 
-    function isFavorite(movieId: number): boolean {
+    function isFavorite(mediaType: MediaType, id: number): boolean {
         return favorites.some(
-            (movie) => movie.id === movieId
+            (item) => item.media_type === mediaType && item.id === id
         );
     }
 
-    function toggleFavorite(movie: Movie): void {
-        setFavorites((currentFavorites) => {
-            const exists = currentFavorites.some(
-                (favorite) => favorite.id === movie.id
+    function toggleFavorite(item: MediaItem): void {
+        setFavorites((current) => {
+            const exists = current.some(
+                (fav) => fav.media_type === item.media_type && fav.id === item.id
             );
 
-            if (exists) {
-                return currentFavorites.filter(
-                    (favorite) => favorite.id !== movie.id
-                );
-            }
-
-            return [...currentFavorites, movie];
+            return exists
+                ? current.filter(
+                    (fav) =>
+                        !(fav.media_type === item.media_type && fav.id === item.id)
+                )
+                : [...current, item];
         });
     }
 
-    function removeFavorite(movieId: number): void {
-        setFavorites((currentFavorites) =>
-            currentFavorites.filter(
-                (movie) => movie.id !== movieId
+    function removeFavorite(mediaType: MediaType, id: number): void {
+        setFavorites((current) =>
+            current.filter(
+                (fav) => !(fav.media_type === mediaType && fav.id === id)
             )
         );
     }
 
     return (
         <FavoritesContext.Provider
-            value={{
-                favorites,
-                isFavorite,
-                toggleFavorite,
-                removeFavorite,
-            }}
+            value={{ favorites, isFavorite, toggleFavorite, removeFavorite }}
         >
             {children}
         </FavoritesContext.Provider>
