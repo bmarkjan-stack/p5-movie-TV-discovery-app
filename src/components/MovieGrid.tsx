@@ -1,33 +1,29 @@
-import type { Movie } from "../types/movie";
+import type { MediaItem } from "../types/movie";
 import MovieCard from "./MovieCard";
 
 interface MovieGridProps {
-    movies: Movie[];
+    items: MediaItem[];
+    emptyTitle?: string;
 }
 
 export default function MovieGrid({
-    movies,
+    items,
+    emptyTitle = "Nothing found",
 }: MovieGridProps) {
-    if (movies.length === 0) {
+    if (items.length === 0) {
         return (
             <div className="empty-state">
-                <div className="empty-icon">🎬</div>
-                <h2>No movies found</h2>
-                <p>
-                    Try another search or select a different
-                    genre.
-                </p>
+                <div className="empty-icon" aria-hidden="true">🎬</div>
+                <h2>{emptyTitle}</h2>
+                <p>Try another search, or adjust your genre and filters.</p>
             </div>
         );
     }
 
     return (
         <div className="movie-grid">
-            {movies.map((movie) => (
-                <MovieCard
-                    key={movie.id}
-                    movie={movie}
-                />
+            {items.map((item) => (
+                <MovieCard key={`${item.media_type}-${item.id}`} item={item} />
             ))}
         </div>
     );

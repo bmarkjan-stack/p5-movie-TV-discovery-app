@@ -2,70 +2,76 @@ import { Link } from "react-router-dom";
 
 import { IMAGE_BASE_URL } from "../services/movieApi";
 import { useFavorites } from "../context/useFavorites";
-import type { Movie } from "../types/movie";
+import {
+    getDisplayTitle,
+    getReleaseDate,
+    type MediaItem,
+} from "../types/movie";
 
 interface MovieCardProps {
-    movie: Movie;
+    item: MediaItem;
 }
 
-export default function MovieCard({
-    movie,
-}: MovieCardProps) {
-    const {
-    isFavorite,
-    toggleFavorite,
-    } = useFavorites();
+export default function MovieCard({ item }: MovieCardProps) {
+    const { isFavorite, toggleFavorite } = useFavorites();
 
-    const favorite = isFavorite(movie.id);
+    const title = getDisplayTitle(item);
+    const favorite = isFavorite(item.media_type, item.id);
+    const detailsPath = `/${item.media_type}/${item.id}`;
 
-    const posterUrl = movie.poster_path
-        ? `${IMAGE_BASE_URL}${movie.poster_path}`
+    const posterUrl = item.poster_path
+        ? `${IMAGE_BASE_URL}${item.poster_path}`
         : "/placeholder-poster.svg";
 
-    const releaseYear = movie.release_date
-        ? movie.release_date.substring(0, 4)
-        : "Unknown";
+    const releaseDate = getReleaseDate(item);
+    const releaseYear = releaseDate ? releaseDate.substring(0, 4) : "Unknown";
 
     return (
         <article className="movie-card">
             <div className="movie-poster-container">
-                <Link to={`/movie/${movie.id}`}>
+                <Link to={detailsPath} aria-label={`View details for ${title}`}>
                     <img
                         className="movie-poster"
                         src={posterUrl}
-                        alt={`${movie.title} poster`}
+                        alt={item.poster_path ? `${title} poster` : `${title} (no poster available)`}
                         loading="lazy"
                     />
                 </Link>
 
+                <span className="media-badge">
+                    {item.media_type === "tv" ? "TV" : "Movie"}
+                </span>
+
                 <button
+                    type="button"
                     className={
                         favorite
                             ? "favorite-button favorite-active"
                             : "favorite-button"
                     }
-                    onClick={() => toggleFavorite(movie)}
+                    onClick={() => toggleFavorite(item)}
+                    aria-pressed={favorite}
                     aria-label={
                         favorite
-                            ? `Remove ${movie.title} from favorites`
-                            : `Add ${movie.title} to favorites`
+                            ? `Remove ${title} from favorites`
+                            : `Add ${title} to favorites`
                     }
                 >
-                    {favorite ? "♥" : "♡"}
+                    <span aria-hidden="true">{favorite ? "♥" : "♡"}</span>
                 </button>
             </div>
 
             <div className="movie-card-content">
-                <Link 
-                    to={`/movie/${movie.id}`}
-                    className="movie-title"
-                >
-                    {movie.title}
+                <Link to={detailsPath} className="movie-title">
+                    {title}
                 </Link>
 
                 <div className="movie-meta">
-                    <span className="rating">
-                        ★ {movie.vote_average.toFixed(1)}
+                    <span
+                        className="rating"
+                        aria-label={`Rated ${item.vote_average.toFixed(1)} out of 10`}
+                    >
+                        ★ {item.vote_average.toFixed(1)}
                     </span>
                     <span>{releaseYear}</span>
                 </div>
