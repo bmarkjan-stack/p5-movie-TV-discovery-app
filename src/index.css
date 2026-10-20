@@ -816,6 +816,18 @@ input:focus-visible {
     color: #fff;
 }
 
+.favorites-filter {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.favorites-filter .media-toggle {
+    margin: 0;
+}
+
 .sort-controls {
     display: flex;
     flex-wrap: wrap;
