@@ -4,6 +4,7 @@
     background: #09090b;
     font-synthesis: none;
     text-rendering: optimizeLegibility;
+    color-scheme: dark;
 }
 
 * {
@@ -225,15 +226,18 @@ a {
 
 .genre-filter {
     display: flex;
-    gap: 8px;
-    margin-bottom: 35px;
-    overflow-x: auto;
-    scrollbar-width: thin;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding: 16px 18px;
+    border: 1px solid #27272a;
+    border-radius: 16px;
+    background: rgba(24, 24, 27, 0.6);
 }
 
 .genre-button {
     flex: 0 0 auto;
-    padding: 8px 14px;
+    padding: 9px 16px;
     border: 1px solid #27272a;
     border-radius: 999px;
     background: #18181b;
@@ -832,8 +836,9 @@ input:focus-visible {
     display: flex;
     flex-wrap: wrap;
     align-items: flex-end;
-    gap: 14px;
-    margin: 18px 0 26px;
+    gap: 16px;
+    margin: 0 0 32px;
+    padding: 0 4px;
 }
 
 .control-field {
@@ -853,6 +858,63 @@ input:focus-visible {
     border-radius: 10px;
     background: #18181b;
     color: #fff;
+    color-scheme: dark;
+}
+
+.control-field select:hover,
+.control-field input:hover {
+    border-color: #52525b;
+}
+
+/* Dropdown list: match the site palette instead of the browser's white */
+select option {
+    background: #18181b;
+    color: #f8fafc;
+}
+
+select option:checked,
+select option:hover {
+    background: #7c3aed;
+    color: #fff;
+}
+
+/* Chromium 135+: fully styleable dropdown with purple hover/selected rows */
+@supports (appearance: base-select) {
+    .control-field select,
+    .control-field select::picker(select) {
+        appearance: base-select;
+    }
+
+    .control-field select::picker(select) {
+        margin-top: 6px;
+        padding: 6px;
+        border: 1px solid #3f3f46;
+        border-radius: 12px;
+        background: #18181b;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    }
+
+    .control-field select option {
+        padding: 9px 12px;
+        border-radius: 8px;
+        color: #d4d4d8;
+    }
+
+    .control-field select option:hover,
+    .control-field select option:focus-visible {
+        background: #3b2a66;
+        color: #fff;
+        outline: none;
+    }
+
+    .control-field select option:checked {
+        background: #7c3aed;
+        color: #fff;
+    }
+
+    .control-field select::picker-icon {
+        color: #a1a1aa;
+    }
 }
 
 .control-field input {
